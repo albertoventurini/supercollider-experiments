@@ -39,6 +39,8 @@ p = Pdef(\pattern,
 p.play;
 )
 
+FreqScope.new;
+
 // PBinds generate events. It's like a stream of events. We can look at each Event object
 // by polling the stream.
 // Events are objects containing key-value pairs, e.g.:
@@ -54,3 +56,38 @@ p.asStream.next(Event.new);
 p.play;
 
 
+// Midi input
+(
+var keys;
+keys = Array.newClear(128);
+
+~noteOnFunc = {arg src, chan, num, vel;
+	var node;
+	node = keys.at(num);
+	if (node.notNil, {
+		node.release;
+		keys.put(num, nil);
+	});
+	node = Synth.new(\synthbass, [\freq, num.midicps, \amp, vel/1500]);
+	keys.put(num, node);
+	[chan,num,vel/1500].postln;
+};
+MIDIIn.addFuncTo(\noteOn, ~noteOnFunc);
+
+~noteOffFunc = {arg src, chan, num, vel;
+	var node;
+	node = keys.at(num);
+	if (node.notNil, {
+		node.release;
+		keys.put(num, nil);
+	});
+};
+MIDIIn.addFuncTo(\noteOff, ~noteOffFunc);
+
+)
+
+// cleanup
+(
+MIDIIn.removeFuncFrom(\noteOn, ~noteOnFunc);
+MIDIIn.removeFuncFrom(\noteOff, ~noteOffFunc);
+)
