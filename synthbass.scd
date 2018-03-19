@@ -58,8 +58,11 @@ p.play;
 
 // Midi input
 (
-var keys;
-keys = Array.newClear(128);
+
+var keys = Array.newClear(128);
+
+MIDIClient.init;
+MIDIIn.connectAll;
 
 ~noteOnFunc = {arg src, chan, num, vel;
 	var node;
