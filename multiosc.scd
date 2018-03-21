@@ -28,9 +28,10 @@ s.plotTree;
 //
 // Three pulse oscillators with a touch of pulse width modulation.
 // Two oscillators are slightly detuned.
+// Trying out a Moog filter.
 (
 SynthDef.new(\synth, {
-    arg freq = 440, outbus = 0, pw1 = 0.7, pw2 = 0.34, pw3 = 0.49, gate = 1, amp = 0.2, ffreqBus = 0, rqBus = 0;
+    arg freq = 440, outbus = 0, pw1 = 0.7, pw2 = 0.34, pw3 = 0.49, gate = 1, amp = 0.15, ffreqBus = 0, rqBus = 0;
     var osc1, osc2, osc3, lfo1, sig, env, ffreq, rq;
 
     lfo1 = SinOsc.kr(2).range(0.95, 1.05);
@@ -38,14 +39,14 @@ SynthDef.new(\synth, {
     osc2 = Pulse.ar((freq*0.991) / 2, pw2*lfo1, 0.2)!2;
     osc3 = Pulse.ar(freq*1.004, pw3*lfo1, 0.2)!2;
 
-    env = EnvGen.kr(Env.asr(0.01, 1, 1), gate, doneAction: 2);
+    env = EnvGen.kr(Env.asr(0.1, 1, 1), gate, doneAction: 2);
 
     sig = Mix.ar([osc1, osc2, osc3]);
     sig = sig * env * amp;
 
     ffreq = In.kr(ffreqBus).linexp(0, 127, 220, 15000);
     rq = In.kr(rqBus).linlin(0, 127, 0.05, 0.95);
-    sig = RLPF.ar(sig, ffreq, rq);
+    sig = BMoog.ar(sig, ffreq, rq);
 
     Out.ar(outbus, sig);
 
@@ -56,18 +57,20 @@ SynthDef.new(\synth, {
 // FX synth - reverb
 (
 SynthDef.new(\reverb, {
-    arg inbus, outbus, sizeBus;
+    arg inbus, outbus;
 
-    Out.ar(outbus, JPverb.ar(in: In.ar(inbus), size: In.kr(sizeBus)));
+    Out.ar(outbus, JPverb.ar(in: In.ar(inbus)));
 }).add;
+)
 
+(
 r = Synth.new(\reverb, [
     \inbus, ~b0,
-    \outbus, 0,
-    \sizeBus, ~c2
+    \outbus, 0
 ], target: ~g1);
 )
 
+r.free;
 
 
 ///////////////////////////////////////////////////////////////////////////
@@ -112,7 +115,7 @@ MIDIdef.cc(\modwheel, {
 
     // 7 is the volume
     if(num == 7, {
-        ~c2.set(val);
+        ~c1.set(val);
     });
 });
 )
